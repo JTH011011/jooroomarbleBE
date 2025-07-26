@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -25,20 +24,20 @@ enum TileType {
 // ──────────────── 사용자 및 맵 설계 ────────────────
 
 model User {
-  id         Int           @id @default(autoincrement())
-  email      String        @unique
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
   password   String
   nickname   String
-  created_at DateTime      @default(now())
+  created_at DateTime @default(now())
 
-  maps       Map[]         @relation("UserMaps")
-  sessions   GameSession[] @relation("UserSessions")
+  maps     Map[]         @relation("UserMaps")
+  sessions GameSession[] @relation("UserSessions")
 }
 
 model Guest {
-  id         String         @id @default(uuid())
+  id         String   @id @default(uuid())
   nickname   String
-  created_at DateTime       @default(now())
+  created_at DateTime @default(now())
 
   participants Participant[]
 }
@@ -46,90 +45,90 @@ model Guest {
 // ──────────────── 게임판 (맵) ────────────────
 
 model Map {
-  id         Int        @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   title      String
-  is_builtin Boolean    @default(false)
-  created_at DateTime   @default(now())
+  is_builtin Boolean  @default(false)
+  created_at DateTime @default(now())
 
-  king       User       @relation("UserMaps", fields: [king_id], references: [id])
-  king_id    Int
+  king    User? @relation("UserMaps", fields: [king_id], references: [id])
+  king_id Int?
 
-  tiles      MapTile[]
-  sessions   GameSession[]
+  tiles    MapTile[]
+  sessions GameSession[]
 }
 
 model MapTile {
-  id            Int       @id @default(autoincrement())
-  map           Map       @relation(fields: [map_id], references: [id])
-  map_id        Int
-  idx           Int
-  tile_type     TileType
-  description   String?
+  id             Int         @id @default(autoincrement())
+  map            Map         @relation(fields: [map_id], references: [id])
+  map_id         Int
+  idx            Int
+  tile_type      TileType
+  description    String?
   default_action Json?
-  events        TileEvent[]
+  events         TileEvent[]
 
-  @@unique([map_id, idx])  // 하나의 맵 내에서는 타일 순서가 유일해야 함
+  @@unique([map_id, idx]) // 하나의 맵 내에서는 타일 순서가 유일해야 함
 }
 
 // ──────────────── 게임 세션 및 참여 ────────────────
 
 model GameSession {
-  id           Int            @id @default(autoincrement())
-  join_code    String         @unique
-  status       SessionStatus  @default(WAIT)
-  started_at   DateTime?
-  ended_at     DateTime?
+  id         Int           @id @default(autoincrement())
+  join_code  String        @unique
+  status     SessionStatus @default(WAIT)
+  started_at DateTime?
+  ended_at   DateTime?
 
-  map          Map            @relation(fields: [map_id], references: [id])
-  map_id       Int
-  king         User           @relation("UserSessions", fields: [king_id], references: [id])
-  king_id      Int
+  map     Map  @relation(fields: [map_id], references: [id])
+  map_id  Int
+  king    User @relation("UserSessions", fields: [king_id], references: [id])
+  king_id Int
 
   participants Participant[]
   turns        Turn[]
 }
 
 model Participant {
-  id            Int          @id @default(autoincrement())
-  session       GameSession  @relation(fields: [session_id], references: [id])
-  session_id    Int
+  id         Int         @id @default(autoincrement())
+  session    GameSession @relation(fields: [session_id], references: [id])
+  session_id Int
 
-  guest         Guest        @relation(fields: [guest_id], references: [id])
-  guest_id      String
+  guest    Guest  @relation(fields: [guest_id], references: [id])
+  guest_id String
 
-  join_order    Int
-  current_pos   Int
-  is_out        Boolean      @default(false)
+  join_order  Int
+  current_pos Int
+  is_out      Boolean @default(false)
 
-  turns         Turn[]
+  turns Turn[]
 }
 
 // ──────────────── 턴 및 타일 이벤트 ────────────────
 
 model Turn {
-  id             Int         @id @default(autoincrement())
-  session        GameSession @relation(fields: [session_id], references: [id])
-  session_id     Int
+  id         Int         @id @default(autoincrement())
+  session    GameSession @relation(fields: [session_id], references: [id])
+  session_id Int
 
   participant    Participant @relation(fields: [participant_id], references: [id])
   participant_id Int
 
-  turn_no        Int
-  dice           Int         // 1~6 주사위 값
-  from_pos       Int
-  to_pos         Int
-  resolved_at    DateTime?
+  turn_no     Int
+  dice        Int // 1~6 주사위 값
+  from_pos    Int
+  to_pos      Int
+  resolved_at DateTime?
 
-  tile_events    TileEvent[]
+  tile_events TileEvent[]
 }
 
 model TileEvent {
-  id            Int       @id @default(autoincrement())
-  turn          Turn      @relation(fields: [turn_id], references: [id])
-  turn_id       Int
+  id      Int  @id @default(autoincrement())
+  turn    Turn @relation(fields: [turn_id], references: [id])
+  turn_id Int
 
-  tile          MapTile   @relation(fields: [tile_id], references: [id])
-  tile_id       Int
+  tile    MapTile @relation(fields: [tile_id], references: [id])
+  tile_id Int
 
   action_result Json
 }
