@@ -1,9 +1,13 @@
+// src/map/dto/create-map.dto.ts
+import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsArray, IsOptional, ValidateNested } from 'class-validator';
 
 export class CreateMapDto {
+  @ApiProperty({ description: '맵 제목' })
   @IsString()
   title: string;
 
+  @ApiProperty({ description: '맵 타일 목록' })
   @IsArray()
   @ValidateNested({ each: true })
   tiles: any[]; // 추후 MapTile 생성 DTO로 교체

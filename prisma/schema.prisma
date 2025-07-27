@@ -84,6 +84,8 @@ model GameSession {
   king    User @relation("UserSessions", fields: [king_id], references: [id])
   king_id Int
 
+  max_players Int
+
   participants Participant[]
   turns        Turn[]
 }
