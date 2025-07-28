@@ -14,7 +14,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt.guard';
 import { RequestWithUser } from '../types/request-with-user';
 import { CreateSessionDto } from './dto/create-session.dto';
 import { JoinSessionDto } from './dto/join-session.dto';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { RollDiceRequestDto } from './dto/roll-dice-request.dto';
 import { RollDiceResponseDto } from './dto/roll-dice-response.dto';
 
@@ -23,6 +23,7 @@ export class SessionController {
   constructor(private readonly service: SessionService) {}
 
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Post()
   @ApiOperation({ summary: '새로운 세션을 생성합니다.' })
   createSession(@Req() req: RequestWithUser, @Body() dto: CreateSessionDto) {
@@ -42,6 +43,7 @@ export class SessionController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @Post(':code/start')
   @ApiOperation({ summary: '세션을 시작합니다.' })
   startSession(@Param('code') code: string, @Req() req: RequestWithUser) {
@@ -58,6 +60,7 @@ export class SessionController {
   }
 
   @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: '세션을 종료합니다.' })
   @Delete(':code')
   endSession(@Param('code') code: string, @Req() req: RequestWithUser) {
@@ -66,7 +69,7 @@ export class SessionController {
 
   @Get(':code/status')
   @ApiOperation({ summary: '실시간 게임 상태 조회(frontend ui)' })
-  getLiveStatus(@Param('joinCode') joinCode: string) {
+  getLiveStatus(@Param('code') joinCode: string) {
     return this.service.getLiveSessionStatus(joinCode);
   }
 }
