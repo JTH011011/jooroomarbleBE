@@ -10,6 +10,7 @@ import { customAlphabet } from 'nanoid';
 import { Participant, Guest } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RollDiceResponseDto } from './dto/roll-dice-response.dto';
+import { SessionPlayStatusDto } from './dto/session-play-status.dto';
 import { BadRequestException } from '@nestjs/common';
 
 const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890', 6);
@@ -219,6 +220,56 @@ export class SessionService {
         description: tile.description ?? '',
         defaultAction: tile.default_action,
       },
+    };
+  }
+  async endSession(joinCode: string, userId: number): Promise<void> {
+    const session = await this.repo.findSessionWithGuests(joinCode);
+    if (!session) throw new NotFoundException('세션 없음');
+
+    if (session.king_id !== userId)
+      throw new ForbiddenException('세션 종료 권한 없음');
+
+    await this.repo.endAndDeleteSession(
+      session.id,
+      session.participants.map((p) => p.guest_id),
+    );
+  }
+  async getLiveSessionStatus(joinCode: string): Promise<SessionPlayStatusDto> {
+    const session = await this.repo.getSessionStatusInGame(joinCode);
+    if (!session) throw new NotFoundException('세션을 찾을 수 없습니다.');
+
+    if (session.status !== 'RUN') {
+      throw new BadRequestException('게임이 아직 시작되지 않았습니다.');
+    }
+
+    const lastTurnNo = session.turns[0]?.turn_no ?? 0;
+    const turnIdx = lastTurnNo % session.participants.length;
+    const currentP = session.participants[turnIdx];
+
+    const curTile = session.map.tiles.find(
+      (t) => t.idx === session.current_pos,
+    )!;
+
+    return {
+      turnNo: lastTurnNo,
+      currentGuest: {
+        participantId: currentP.id,
+        guestId: currentP.guest_id,
+        nickname: currentP.guest.nickname,
+        joinOrder: currentP.join_order,
+      },
+      currentPos: session.current_pos,
+      currentTile: {
+        idx: curTile.idx,
+        description: curTile.description ?? '',
+        defaultAction: curTile.default_action ?? {},
+      },
+      participants: session.participants.map((p) => ({
+        participantId: p.id,
+        guestId: p.guest_id,
+        nickname: p.guest.nickname,
+        joinOrder: p.join_order,
+      })),
     };
   }
 }

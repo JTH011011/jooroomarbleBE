@@ -150,10 +150,49 @@ export class SessionRepository {
     ]);
   }
 
+  getSessionStatusInGame(joinCode: string) {
+    return this.prisma.gameSession.findUnique({
+      where: { join_code: joinCode },
+      include: {
+        participants: {
+          include: { guest: true },
+          orderBy: { join_order: 'asc' },
+        },
+        turns: {
+          orderBy: { turn_no: 'desc' },
+          take: 1,
+        },
+        map: {
+          include: { tiles: true },
+        },
+      },
+    });
+  }
+
   setLadderRemaining(sessionId: number, remain: number) {
     return this.prisma.gameSession.update({
       where: { id: sessionId },
       data: { ladder_remaining: remain },
     });
+  }
+
+  findSessionWithGuests(joinCode: string) {
+    return this.prisma.gameSession.findUnique({
+      where: { join_code: joinCode },
+      include: {
+        participants: {
+          select: {
+            guest_id: true,
+          },
+        },
+      },
+    });
+  }
+
+  async endAndDeleteSession(sessionId: number, guestIds: string[]) {
+    await this.prisma.$transaction([
+      this.prisma.gameSession.delete({ where: { id: sessionId } }), // cascade
+      this.prisma.guest.deleteMany({ where: { id: { in: guestIds } } }), // manual
+    ]);
   }
 }

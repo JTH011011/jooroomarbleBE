@@ -7,6 +7,7 @@ import {
   UseGuards,
   Param,
   Get,
+  Delete,
 } from '@nestjs/common';
 import { SessionService } from './session.service';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard';
@@ -48,10 +49,24 @@ export class SessionController {
   }
 
   @Post(':code/turn') // ⬅️ Guard 제거
+  @ApiOperation({ summary: '주사위를 굴립니다.' })
   rollDice(
     @Param('code') code: string,
     @Body() body: RollDiceRequestDto,
   ): Promise<RollDiceResponseDto> {
     return this.service.rollDice(code, body.guestId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '세션을 종료합니다.' })
+  @Delete(':code')
+  endSession(@Param('code') code: string, @Req() req: RequestWithUser) {
+    return this.service.endSession(code, req.user.id);
+  }
+
+  @Get(':code/status')
+  @ApiOperation({ summary: '실시간 게임 상태 조회(frontend ui)' })
+  getLiveStatus(@Param('joinCode') joinCode: string) {
+    return this.service.getLiveSessionStatus(joinCode);
   }
 }
