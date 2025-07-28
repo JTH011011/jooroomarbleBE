@@ -16,6 +16,11 @@ export class PrismaService
   constructor() {
     super({
       log: ['query', 'warn', 'error'],
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
     });
 
     // 미들웨어로 "closed" 연결 자동 재시도 처리
