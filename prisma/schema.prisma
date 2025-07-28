@@ -14,11 +14,9 @@ enum SessionStatus {
 }
 
 enum TileType {
+  START
   DRINK
-  MOVE
-  BLOCK
   CUSTOM
-  CARD
 }
 
 // ──────────────── 사용자 및 맵 설계 ────────────────
@@ -84,7 +82,10 @@ model GameSession {
   king    User @relation("UserSessions", fields: [king_id], references: [id])
   king_id Int
 
-  max_players Int
+  max_players      Int
+  current_pos      Int // 현재 플레이어의 위치 (0부터 시작)
+  is_on_ladder     Boolean @default(false)
+  ladder_remaining Int     @default(0) // 사다리 남은 횟수
 
   participants Participant[]
   turns        Turn[]
@@ -92,15 +93,14 @@ model GameSession {
 
 model Participant {
   id         Int         @id @default(autoincrement())
-  session    GameSession @relation(fields: [session_id], references: [id])
+  session    GameSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
   session_id Int
 
   guest    Guest  @relation(fields: [guest_id], references: [id])
   guest_id String
 
-  join_order  Int
-  current_pos Int
-  is_out      Boolean @default(false)
+  join_order Int
+  is_out     Boolean @default(false)
 
   turns Turn[]
 }
@@ -109,10 +109,10 @@ model Participant {
 
 model Turn {
   id         Int         @id @default(autoincrement())
-  session    GameSession @relation(fields: [session_id], references: [id])
+  session    GameSession @relation(fields: [session_id], references: [id], onDelete: Cascade)
   session_id Int
 
-  participant    Participant @relation(fields: [participant_id], references: [id])
+  participant    Participant @relation(fields: [participant_id], references: [id], onDelete: Cascade)
   participant_id Int
 
   turn_no     Int
@@ -126,7 +126,7 @@ model Turn {
 
 model TileEvent {
   id      Int  @id @default(autoincrement())
-  turn    Turn @relation(fields: [turn_id], references: [id])
+  turn    Turn @relation(fields: [turn_id], references: [id], onDelete: Cascade)
   turn_id Int
 
   tile    MapTile @relation(fields: [tile_id], references: [id])
