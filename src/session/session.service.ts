@@ -117,8 +117,10 @@ export class SessionService {
       throw new ForbiddenException('이미 시작된 세션입니다.');
     }
 
-    if (session.participants.length !== session.max_players) {
-      throw new ForbiddenException('아직 참가자가 부족합니다.');
+    if (session.participants.length < 2) {
+      throw new ForbiddenException(
+        '참가자가 2명 이상이어야 시작할 수 있습니다.',
+      );
     }
 
     // 랜덤하게 섞은 participant 리스트
