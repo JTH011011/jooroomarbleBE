@@ -14,6 +14,14 @@ async function bootstrap() {
   // 전역 ValidationPipe 적용 (DTO 데코레이터 자동 검증)
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
+  // CORS 설정
+  app.enableCors({
+    origin: '*', // 모든 도메인 허용
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Accept, Authorization',
+    credentials: true, // 쿠키 허용
+  });
+
   // Swagger 설정
   const config = new DocumentBuilder()
     .setTitle('주루마블 API')
