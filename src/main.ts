@@ -36,9 +36,11 @@ async function bootstrap() {
   // Swagger UI를 /api 경로에 연결
   SwaggerModule.setup('api', app, document);
 
-  await app.listen(3000);
-  console.log('🚀 Application running on: http://localhost:3000');
-  console.log('📚 Swagger UI available at: http://localhost:3000/api');
+  const PORT = 80;
+
+  await app.listen(PORT);
+  console.log(`🚀 Application running on: http://localhost:${PORT}`);
+  console.log(`📚 Swagger UI available at: http://localhost:${PORT}/api`);
 }
 
 bootstrap();

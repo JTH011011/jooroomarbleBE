@@ -1,0 +1,9 @@
+node_modules
+dist
+# ↓ 비밀은 컨테이너 외부 환경변수로 주입
+.env
+
+.git
+Dockerfile
+*.log
+test
