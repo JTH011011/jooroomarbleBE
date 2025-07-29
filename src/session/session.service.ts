@@ -274,4 +274,22 @@ export class SessionService {
       })),
     };
   }
+  async leaveSession(joinCode: string, guestId: string) {
+    const session = await this.repo.findSessionByCode(joinCode);
+    if (!session) throw new NotFoundException('세션을 찾을 수 없습니다.');
+
+    const leaving = session.participants.find((p) => p.guest_id === guestId);
+    if (!leaving) throw new ForbiddenException('이 세션 참가자가 아닙니다.');
+
+    // ① 참가자+게스트 동시 삭제
+    await this.repo.deleteParticipantWithGuest(leaving.id, guestId);
+
+    // ② 참가자 전원 나가면 세션도 삭제
+    const restCnt = session.participants.length - 1;
+    if (restCnt === 0) {
+      await this.repo.endAndDeleteSession(session.id, []); // guest 이미 제거됨
+    }
+
+    return { ok: true };
+  }
 }

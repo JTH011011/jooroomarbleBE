@@ -195,4 +195,12 @@ export class SessionRepository {
       this.prisma.guest.deleteMany({ where: { id: { in: guestIds } } }), // manual
     ]);
   }
+
+  /** 참가자와 연결된 게스트를 함께 삭제 */
+  async deleteParticipantWithGuest(participantId: number, guestId: string) {
+    await this.prisma.$transaction([
+      this.prisma.participant.delete({ where: { id: participantId } }),
+      this.prisma.guest.delete({ where: { id: guestId } }),
+    ]);
+  }
 }

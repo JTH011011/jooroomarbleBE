@@ -72,4 +72,10 @@ export class SessionController {
   getLiveStatus(@Param('code') joinCode: string) {
     return this.service.getLiveSessionStatus(joinCode);
   }
+
+  @Delete(':code/leave')
+  @ApiOperation({ summary: '세션에서 스스로 나가기' })
+  leave(@Param('code') code: string, @Body('guestId') guestId: string) {
+    return this.service.leaveSession(code, guestId);
+  }
 }
