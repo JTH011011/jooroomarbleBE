@@ -12,6 +12,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { RollDiceResponseDto } from './dto/roll-dice-response.dto';
 import { SessionPlayStatusDto } from './dto/session-play-status.dto';
 import { BadRequestException } from '@nestjs/common';
+import { SessionGateway } from './session.gateway';
 
 const nanoid = customAlphabet('ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890', 6);
 
@@ -20,6 +21,7 @@ export class SessionService {
   constructor(
     private readonly repo: SessionRepository,
     private readonly prisma: PrismaService,
+    private readonly sessionGateway: SessionGateway,
   ) {}
 
   /** 사다리/순환 포함 1칸 전진 */
@@ -79,11 +81,15 @@ export class SessionService {
       joinOrder,
     );
 
-    return {
+    const result = {
       sessionId: session.id,
       guestId: guest.id,
       participantId: participant.id,
     };
+
+    this.sessionGateway.server.to(joinCode).emit('guest_joined', result);
+
+    return result;
   }
 
   async getSessionStatus(joinCode: string) {
@@ -143,11 +149,15 @@ export class SessionService {
       joinOrder: i,
     }));
 
-    return {
+    const result = {
       sessionId: session.id,
       status: 'RUN',
       orderedParticipants: sorted,
     };
+
+    this.sessionGateway.server.to(joinCode).emit('game_start', result);
+
+    return result;
   }
   /** 사다리·말 하나 규칙 포함 주사위 굴리기 */
   async rollDice(
@@ -212,7 +222,7 @@ export class SessionService {
     });
 
     /* ── 응답 DTO ──────────────────────────────────── */
-    return {
+    const result = {
       turnNo: lastTurnNo + 1,
       dice,
       fromPos,
@@ -223,7 +233,12 @@ export class SessionService {
         defaultAction: tile.default_action,
       },
     };
+
+    this.sessionGateway.server.to(joinCode).emit('turn_changed', result);
+
+    return result;
   }
+
   async beginPlaySession(joinCode: string, userId: number) {
     const session = await this.repo.findSessionByCode(joinCode);
     if (!session) throw new NotFoundException('세션 없음');
@@ -234,7 +249,15 @@ export class SessionService {
       throw new ForbiddenException('현재 단계가 순서 배정이 아닙니다.');
 
     await this.repo.playSession(session.id);
-    return { sessionId: session.id, status: 'PLAYING' };
+
+    const result = {
+      sessionId: session.id,
+      status: 'PLAYING',
+    };
+
+    this.sessionGateway.server.to(joinCode).emit('game_begin', result);
+
+    return result;
   }
 
   async endSession(joinCode: string, userId: number): Promise<void> {
@@ -243,6 +266,8 @@ export class SessionService {
 
     if (session.king_id !== userId)
       throw new ForbiddenException('세션 종료 권한 없음');
+
+    this.sessionGateway.kickAllClientsFromRoom(joinCode);
 
     await this.repo.endAndDeleteSession(
       session.id,
