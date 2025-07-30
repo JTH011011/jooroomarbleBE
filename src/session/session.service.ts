@@ -267,7 +267,7 @@ export class SessionService {
     if (session.king_id !== userId)
       throw new ForbiddenException('세션 종료 권한 없음');
 
-    this.sessionGateway.kickAllClientsFromRoom(joinCode);
+    await this.sessionGateway.kickAllClientsFromRoom(joinCode);
 
     await this.repo.endAndDeleteSession(
       session.id,
