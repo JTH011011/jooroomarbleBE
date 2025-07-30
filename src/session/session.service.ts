@@ -253,6 +253,15 @@ export class SessionService {
     const result = {
       sessionId: session.id,
       status: 'PLAYING',
+      orderedParticipants: session.participants
+        .map((p) =>
+          Object({
+            participantId: p.id,
+            nickname: p.guest.nickname,
+            joinOrder: p.join_order,
+          }),
+        )
+        .sort((a, b) => a.joinOrder - b.joinOrder),
     };
 
     this.sessionGateway.server.to(joinCode).emit('game_begin', result);
