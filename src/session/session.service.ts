@@ -30,7 +30,7 @@ export class SessionService {
 
     if (pos === 28) return 5; // 28→5
     if (pos >= 24 && pos <= 27) return pos + 1; // 24→25→…→28
-    return (pos + 1) % 29; // 일반
+    return (pos + 1) % 24; // 일반
   }
 
   /** fromPos에서 dice만큼 이동(사다리 로직 포함) */
