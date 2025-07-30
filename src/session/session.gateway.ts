@@ -30,7 +30,7 @@ export class SessionGateway {
     for (const socketId of socketsInRoom) {
       const socket = this.server.sockets.sockets.get(socketId);
       if (socket) {
-        socket.leave(code); // 룸에서 나가게
+        await socket.leave(code); // 룸에서 나가게
       }
     }
 
@@ -43,7 +43,7 @@ export class SessionGateway {
     @ConnectedSocket() client: Socket,
   ) {
     console.info(`Client ${client.id} joining session: ${payload.code}`);
-    client.join(payload.code);
+    await client.join(payload.code);
   }
 
   @SubscribeMessage('leave_room')
@@ -52,6 +52,6 @@ export class SessionGateway {
     @ConnectedSocket() client: Socket,
   ) {
     console.info(`Client ${client.id} leaving room: ${payload.code}`);
-    client.leave(payload.code);
+    await client.leave(payload.code);
   }
 }
