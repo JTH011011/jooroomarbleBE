@@ -84,6 +84,14 @@ export class SessionRepository {
     });
   }
 
+  // src/session/session.repository.ts
+  playSession(sessionId: number) {
+    return this.prisma.gameSession.update({
+      where: { id: sessionId },
+      data: { status: 'PLAYING' },
+    });
+  }
+
   // 세션 코드로 전체 정보 조회 (게임 진행용)
   async findSessionWithMapAndParticipants(joinCode: string) {
     return this.prisma.gameSession.findUnique({

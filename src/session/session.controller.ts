@@ -50,6 +50,14 @@ export class SessionController {
     return this.service.startSession(code, req.user.id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @Post(':code/begin')
+  @ApiOperation({ summary: '순서 확정 후 실제 게임 시작' })
+  beginPlay(@Param('code') code: string, @Req() req: RequestWithUser) {
+    return this.service.beginPlaySession(code, req.user.id);
+  }
+
   @Post(':code/turn') // ⬅️ Guard 제거
   @ApiOperation({ summary: '주사위를 굴립니다.' })
   rollDice(
@@ -73,9 +81,15 @@ export class SessionController {
     return this.service.getLiveSessionStatus(joinCode);
   }
 
-  @Delete(':code/leave')
+  @Get(':code/board')
+  @ApiOperation({ summary: '보드 초기 데이터(맵 + 참가자) 가져오기' })
+  getBoard(@Param('code') code: string) {
+    return this.service.getBoardData(code);
+  }
+
+  @Delete(':code/leave/:guestId')
   @ApiOperation({ summary: '세션에서 스스로 나가기' })
-  leave(@Param('code') code: string, @Body('guestId') guestId: string) {
+  leave(@Param('code') code: string, @Param('guestId') guestId: string) {
     return this.service.leaveSession(code, guestId);
   }
 }

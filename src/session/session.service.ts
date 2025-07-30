@@ -157,7 +157,7 @@ export class SessionService {
     /* ── 세션 & 기초 검증 ─────────────────────────────── */
     const session = await this.repo.findSessionForTurn(joinCode);
     if (!session) throw new NotFoundException('세션 없음');
-    if (session.status !== 'RUN')
+    if (session.status !== 'PLAYING')
       throw new BadRequestException('게임이 시작되지 않았습니다.');
 
     const players = session.participants;
@@ -224,6 +224,19 @@ export class SessionService {
       },
     };
   }
+  async beginPlaySession(joinCode: string, userId: number) {
+    const session = await this.repo.findSessionByCode(joinCode);
+    if (!session) throw new NotFoundException('세션 없음');
+
+    if (session.king_id !== userId) throw new ForbiddenException('방장만 가능');
+
+    if (session.status !== 'RUN')
+      throw new ForbiddenException('현재 단계가 순서 배정이 아닙니다.');
+
+    await this.repo.playSession(session.id);
+    return { sessionId: session.id, status: 'PLAYING' };
+  }
+
   async endSession(joinCode: string, userId: number): Promise<void> {
     const session = await this.repo.findSessionWithGuests(joinCode);
     if (!session) throw new NotFoundException('세션 없음');
@@ -236,11 +249,41 @@ export class SessionService {
       session.participants.map((p) => p.guest_id),
     );
   }
+
+  async getBoardData(joinCode: string) {
+    const session = await this.repo.findSessionWithMapAndParticipants(joinCode);
+    if (!session) throw new NotFoundException('세션 없음');
+    if (session.status === 'WAIT')
+      throw new BadRequestException('게임이 아직 시작되지 않았습니다.');
+
+    return {
+      sessionId: session.id,
+      status: session.status,
+      map: {
+        id: session.map.id,
+        title: session.map.title,
+        tiles: session.map.tiles.map((t) => ({
+          idx: t.idx,
+          tileType: t.tile_type,
+          description: t.description,
+          defaultAction: t.default_action,
+        })),
+      },
+      participants: session.participants.map((p) => ({
+        participantId: p.id,
+        guestId: p.guest_id,
+        nickname: p.guest.nickname,
+        joinOrder: p.join_order,
+      })),
+      currentPos: session.current_pos,
+    };
+  }
+
   async getLiveSessionStatus(joinCode: string): Promise<SessionPlayStatusDto> {
     const session = await this.repo.getSessionStatusInGame(joinCode);
     if (!session) throw new NotFoundException('세션을 찾을 수 없습니다.');
 
-    if (session.status !== 'RUN') {
+    if (session.status !== 'PLAYING') {
       throw new BadRequestException('게임이 아직 시작되지 않았습니다.');
     }
 
