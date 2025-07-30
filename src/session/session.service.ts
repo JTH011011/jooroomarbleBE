@@ -25,18 +25,23 @@ export class SessionService {
   ) {}
 
   /** 사다리/순환 포함 1칸 전진 */
-  private nextTile(pos: number): number {
+  private nextTile(pos: number, enterLadder: boolean): number {
+    if (enterLadder && pos === 15) return 24; // 24→15 (사다리 첫 칸)
+
     if (pos === 28) return 5; // 28→5
     if (pos >= 24 && pos <= 27) return pos + 1; // 24→25→…→28
-    if (pos === 15) return 24; // 15→24 (사다리 첫 칸)
     return (pos + 1) % 29; // 일반
   }
 
   /** fromPos에서 dice만큼 이동(사다리 로직 포함) */
-  private simulateMove(fromPos: number, dice: number): number {
+  private simulateMove(
+    fromPos: number,
+    dice: number,
+    enterLadder: boolean,
+  ): number {
     let cur = fromPos;
     for (let i = 0; i < dice; i++) {
-      cur = this.nextTile(cur);
+      cur = this.nextTile(cur, enterLadder);
     }
     return cur;
   }
@@ -192,10 +197,10 @@ export class SessionService {
     if (fromPos === 15) {
       /* ① 15에 정확히 멈춘 직후 턴 → 탑승 시작 */
       await this.repo.setLadderRemaining(session.id, 6);
-      toPos = this.simulateMove(fromPos, dice); // 24부터 주사위 만큼 이동
+      toPos = this.simulateMove(fromPos, dice, true); // 24부터 주사위 만큼 이동
     } else if (remain > 0) {
       /* ② 이미 사다리 위 */
-      toPos = this.simulateMove(fromPos, dice);
+      toPos = this.simulateMove(fromPos, dice, false);
       const remainAfter = remain - dice;
       await this.repo.setLadderRemaining(
         session.id,
@@ -203,7 +208,7 @@ export class SessionService {
       );
     } else {
       /* ③ 일반 이동 */
-      toPos = this.simulateMove(fromPos, dice);
+      toPos = this.simulateMove(fromPos, dice, false);
     }
 
     const tile = session.map.tiles.find((t) => t.idx === toPos)!;
