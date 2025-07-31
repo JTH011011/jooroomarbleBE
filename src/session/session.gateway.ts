@@ -6,6 +6,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { Logger } from '@nestjs/common';
 
 @WebSocketGateway({
   cors: true,
@@ -18,23 +19,25 @@ export class SessionGateway {
   server: Server;
 
   // 모든 클라이언트를 특정 room에서 내보내기
+  // SessionGateway.ts
   async kickAllClientsFromRoom(code: string) {
-    const adapter = this.server.sockets.adapter;
-    const socketsInRoom = adapter.rooms.get(code);
+    // === 기존 로직 대체 ===
+    // 1) room 핸들러 참조
+    const room = this.server.in(code); // 수정
 
-    if (!socketsInRoom) {
-      console.log(`Session ${code} is empty or does not exist.`);
+    // 2) 현재 room 에 실제로 연결-된 소켓 목록을 가져옴
+    const sockets = await room.fetchSockets(); // 수정
+    if (sockets.length === 0) {
+      // 수정
+      Logger.log(`Session ${code} is empty or does not exist.`); // 수정
       return;
     }
 
-    for (const socketId of socketsInRoom) {
-      const socket = this.server.sockets.sockets.get(socketId);
-      if (socket) {
-        await socket.leave(code); // 룸에서 나가게
-      }
-    }
-
-    console.log(`All clients have been kicked from room ${code}`);
+    // 3) Socket.IO v4 built-in 메서드로 한 방에 퇴장 처리
+    room.socketsLeave(code); // 수정
+    // └ 필요하다면 연결 자체를 끊으려면 room.disconnectSockets();
+    // 4) 로그 출력
+    Logger.log(`All clients have been kicked from room ${code}`); // 수정
   }
 
   @SubscribeMessage('join_room')
